@@ -1,66 +1,83 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { WorkflowState, WorkflowContextType } from '@/types';
+import React, { createContext, useContext, useReducer, ReactNode } from "react";
+import { WorkflowState, WorkflowContextType } from "@/types";
 
 const initialState: WorkflowState = {
   currentStep: 0,
-  conversationId: '',
-  keyword: '',
+  conversationId: "",
+  keyword: "",
   personas: [],
   selectedPersona: null,
   businessIdeas: [],
   selectedBusinessIdea: null,
   productDetails: {
-    category: '',
-    features: '',
-    brandImage: ''
+    category: "",
+    features: "",
+    brandImage: "",
   },
   productNames: [],
   selectedProductName: null,
-  leanCanvas: null
+  leanCanvas: null,
 };
 
-type WorkflowAction = 
-  | { type: 'UPDATE_STATE'; payload: Partial<WorkflowState> }
-  | { type: 'NEXT_STEP' }
-  | { type: 'PREV_STEP' }
-  | { type: 'RESET_WORKFLOW' };
+type WorkflowAction =
+  | { type: "UPDATE_STATE"; payload: Partial<WorkflowState> }
+  | { type: "NEXT_STEP" }
+  | { type: "PREV_STEP" }
+  | { type: "RESET_WORKFLOW" };
 
-function workflowReducer(state: WorkflowState, action: WorkflowAction): WorkflowState {
+function workflowReducer(
+  state: WorkflowState,
+  action: WorkflowAction
+): WorkflowState {
   switch (action.type) {
-    case 'UPDATE_STATE':
-      return { ...state, ...action.payload };
-    case 'NEXT_STEP':
+    case "UPDATE_STATE":
+      const updatedState = { ...state, ...action.payload };
+      // conversationIdが更新された場合、ログ出力で確認
+      if (action.payload.conversationId && action.payload.conversationId !== state.conversationId) {
+        console.log('WorkflowContext: conversationId updated:', action.payload.conversationId);
+      }
+      // Ensure businessIdeas is always an array
+      if (
+        "businessIdeas" in action.payload &&
+        !Array.isArray(action.payload.businessIdeas)
+      ) {
+        updatedState.businessIdeas = [];
+      }
+      return updatedState;
+    case "NEXT_STEP":
       return { ...state, currentStep: Math.min(state.currentStep + 1, 5) };
-    case 'PREV_STEP':
+    case "PREV_STEP":
       return { ...state, currentStep: Math.max(state.currentStep - 1, 0) };
-    case 'RESET_WORKFLOW':
+    case "RESET_WORKFLOW":
       return { ...initialState };
     default:
       return state;
   }
 }
 
-const WorkflowContext = createContext<WorkflowContextType | undefined>(undefined);
+const WorkflowContext = createContext<WorkflowContextType | undefined>(
+  undefined
+);
 
 export function WorkflowProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(workflowReducer, initialState);
 
   const updateState = (updates: Partial<WorkflowState>) => {
-    dispatch({ type: 'UPDATE_STATE', payload: updates });
+    dispatch({ type: "UPDATE_STATE", payload: updates });
   };
 
   const nextStep = () => {
-    dispatch({ type: 'NEXT_STEP' });
+    dispatch({ type: "NEXT_STEP" });
   };
 
   const prevStep = () => {
-    dispatch({ type: 'PREV_STEP' });
+    dispatch({ type: "PREV_STEP" });
   };
 
   const resetWorkflow = () => {
-    dispatch({ type: 'RESET_WORKFLOW' });
+    dispatch({ type: "RESET_WORKFLOW" });
   };
 
   const contextValue: WorkflowContextType = {
@@ -68,7 +85,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     updateState,
     nextStep,
     prevStep,
-    resetWorkflow
+    resetWorkflow,
   };
 
   return (
@@ -81,7 +98,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
 export function useWorkflow() {
   const context = useContext(WorkflowContext);
   if (context === undefined) {
-    throw new Error('useWorkflow must be used within a WorkflowProvider');
+    throw new Error("useWorkflow must be used within a WorkflowProvider");
   }
   return context;
 }

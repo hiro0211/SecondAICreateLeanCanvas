@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWorkflow } from '@/contexts/WorkflowContext';
 import { useDifyChat } from '@/hooks/useDifyChat';
+import { parsePersonasResponse } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
 export function KeywordInput() {
@@ -19,14 +20,35 @@ export function KeywordInput() {
     if (!keyword.trim()) return;
 
     try {
+      console.log('🚀 Sending keyword:', keyword);
       const response = await sendMessage(keyword);
-      updateState({ 
-        keyword, 
-        conversationId: response.conversation_id 
+      
+      console.log('✅ Keyword response received:', {
+        conversation_id: response.conversation_id,
+        answer_length: response.answer?.length || 0
       });
+      
+      // 🔥 重要: レスポンスからペルソナデータを即座に解析・保存
+      let personas = [];
+      if (response.answer) {
+        try {
+          personas = parsePersonasResponse(response.answer);
+          console.log('✅ Parsed personas:', personas.length);
+        } catch (parseError) {
+          console.error('❌ Failed to parse personas:', parseError);
+        }
+      }
+      
+      // conversationIdとペルソナデータを同時に保存
+      updateState({ 
+        keyword,
+        conversationId: response.conversation_id,
+        personas: personas // 🔥 ここでペルソナデータを保存
+      });
+      
       nextStep();
     } catch (err) {
-      console.error('Failed to send keyword:', err);
+      console.error('❌ Failed to send keyword:', err);
     }
   };
 
