@@ -22,16 +22,16 @@ const stepComponents = [
 
 export default function Home() {
   const { state } = useWorkflow();
-  const { currentStep } = state;
+  const { step } = state;
 
-  const CurrentStepComponent = stepComponents[currentStep];
+  const CurrentStepComponent = stepComponents[step];
 
   return (
     <div className="max-w-7xl mx-auto">
-      <StepIndicator currentStep={currentStep} totalSteps={6} />
+      <StepIndicator currentStep={step} totalSteps={6} />
       
       <AnimatePresence mode="wait">
-        <CurrentStepComponent key={currentStep} />
+        <CurrentStepComponent key={step} />
       </AnimatePresence>
       
       <NavigationButtons />

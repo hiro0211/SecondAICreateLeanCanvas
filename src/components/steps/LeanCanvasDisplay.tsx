@@ -1,12 +1,10 @@
+// src/components/steps/LeanCanvasDisplay.tsx
 'use client';
 
-import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWorkflow } from '@/contexts/WorkflowContext';
-import { useDifyChat } from '@/hooks/useDifyChat';
-import { parseLeanCanvasResponse } from '@/lib/utils';
 import { Loader2, Download, RefreshCw } from 'lucide-react';
 
 const canvasItems = [
@@ -22,42 +20,26 @@ const canvasItems = [
 ];
 
 export function LeanCanvasDisplay() {
-  const { state, updateState, resetWorkflow } = useWorkflow();
-  const { sendMessage, loading, error } = useDifyChat();
-
-  useEffect(() => {
-    const fetchLeanCanvas = async () => {
-      if (!state.leanCanvas && state.selectedProductName) {
-        try {
-          const response = await sendMessage('リーンキャンバスを生成してください');
-          const leanCanvas = parseLeanCanvasResponse(response.answer);
-          updateState({ leanCanvas });
-        } catch (err) {
-          console.error('Failed to fetch lean canvas:', err);
-        }
-      }
-    };
-
-    fetchLeanCanvas();
-  }, [state.selectedProductName, state.leanCanvas, sendMessage, updateState]);
+  const { state, reset } = useWorkflow();
+  const { leanCanvas, selectedProductName, keyword, selectedPersona, selectedIdea, productDetails, isLoading, error } = state;
 
   const handleDownload = () => {
-    if (!state.leanCanvas || !state.selectedProductName) return;
+    if (!leanCanvas || !selectedProductName) return;
 
     const data = {
-      productName: state.selectedProductName.name,
-      keyword: state.keyword,
-      persona: state.selectedPersona,
-      businessIdea: state.selectedBusinessIdea,
-      productDetails: state.productDetails,
-      leanCanvas: state.leanCanvas
+      productName: selectedProductName.name,
+      keyword,
+      persona: selectedPersona,
+      businessIdea: selectedIdea,
+      productDetails,
+      leanCanvas
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${state.selectedProductName.name}_lean_canvas.json`;
+    a.download = `${selectedProductName.name}_lean_canvas.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -65,10 +47,10 @@ export function LeanCanvasDisplay() {
   };
 
   const handleRestart = () => {
-    resetWorkflow();
+    reset();
   };
 
-  if (loading && !state.leanCanvas) {
+  if (isLoading && !leanCanvas) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -87,7 +69,7 @@ export function LeanCanvasDisplay() {
     );
   }
 
-  if (!state.leanCanvas) {
+  if (!leanCanvas) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -118,7 +100,7 @@ export function LeanCanvasDisplay() {
     >
       <div className="mb-8 text-center">
         <h2 className="text-4xl font-bold mb-4">
-          {state.selectedProductName?.name} のリーンキャンバス
+          {selectedProductName?.name} のリーンキャンバス
         </h2>
         <p className="text-muted-foreground mb-6">
           完成したリーンキャンバスです。各ブロックをクリックして詳細を確認できます。
@@ -137,7 +119,7 @@ export function LeanCanvasDisplay() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {canvasItems.map((item, index) => {
-          const content = state.leanCanvas![item.key as keyof typeof state.leanCanvas] as string[];
+          const content = leanCanvas![item.key as keyof typeof leanCanvas] as string[];
           
           return (
             <motion.div

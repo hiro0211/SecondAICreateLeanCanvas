@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { WorkflowProvider } from '@/contexts/WorkflowContext'
+import { GeneratorProvider } from '@/contexts/WorkflowContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={inter.className}>
-        <WorkflowProvider>
+        <GeneratorProvider>
           <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
             <header className="bg-white/80 backdrop-blur-sm border-b">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -34,7 +34,7 @@ export default function RootLayout({
               {children}
             </main>
           </div>
-        </WorkflowProvider>
+        </GeneratorProvider>
       </body>
     </html>
   )

@@ -1,3 +1,4 @@
+// src/components/steps/KeywordInput.tsx
 'use client';
 
 import { useState } from 'react';
@@ -6,49 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWorkflow } from '@/contexts/WorkflowContext';
-import { useDifyChat } from '@/hooks/useDifyChat';
-import { parsePersonasResponse } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
 export function KeywordInput() {
   const [keyword, setKeyword] = useState('');
-  const { updateState, nextStep } = useWorkflow();
-  const { sendMessage, loading, error } = useDifyChat();
+  const { state, generatePersonas } = useWorkflow();
+  const { isLoading, error } = state;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!keyword.trim()) return;
 
     try {
-      console.log('🚀 Sending keyword:', keyword);
-      const response = await sendMessage(keyword);
-      
-      console.log('✅ Keyword response received:', {
-        conversation_id: response.conversation_id,
-        answer_length: response.answer?.length || 0
-      });
-      
-      // 🔥 重要: レスポンスからペルソナデータを即座に解析・保存
-      let personas = [];
-      if (response.answer) {
-        try {
-          personas = parsePersonasResponse(response.answer);
-          console.log('✅ Parsed personas:', personas.length);
-        } catch (parseError) {
-          console.error('❌ Failed to parse personas:', parseError);
-        }
-      }
-      
-      // conversationIdとペルソナデータを同時に保存
-      updateState({ 
-        keyword,
-        conversationId: response.conversation_id,
-        personas: personas // 🔥 ここでペルソナデータを保存
-      });
-      
-      nextStep();
+      await generatePersonas(keyword);
     } catch (err) {
-      console.error('❌ Failed to send keyword:', err);
+      console.error('❌ Failed to generate personas:', err);
     }
   };
 
@@ -74,7 +47,7 @@ export function KeywordInput() {
                 placeholder="キーワードを入力してください"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
-                disabled={loading}
+                disabled={isLoading}
                 className="text-lg"
               />
             </div>
@@ -83,13 +56,13 @@ export function KeywordInput() {
             )}
             <Button 
               type="submit" 
-              disabled={loading || !keyword.trim()}
+              disabled={isLoading || !keyword.trim()}
               className="w-full"
             >
-              {loading ? (
+              {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  処理中...
+                  ペルソナを生成中...
                 </>
               ) : (
                 'ペルソナ分析を開始'

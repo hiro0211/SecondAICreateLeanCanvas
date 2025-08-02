@@ -15,29 +15,29 @@ export function NavigationButtons({
   canGoPrev = true, 
   isLoading = false 
 }: NavigationButtonsProps) {
-  const { state, prevStep, resetWorkflow } = useWorkflow();
-  const { currentStep } = state;
+  const { state, goBack, reset } = useWorkflow();
+  const { step } = state;
 
   const handlePrevious = () => {
-    if (canGoPrev && currentStep > 0 && !isLoading) {
-      prevStep();
+    if (canGoPrev && step > 0 && !isLoading) {
+      goBack();
     }
   };
 
   const handleReset = () => {
     if (!isLoading) {
-      resetWorkflow();
+      reset();
     }
   };
 
-  if (currentStep === 5) {
+  if (step === 5) {
     return null;
   }
 
   return (
     <div className="flex justify-between items-center mt-8 max-w-4xl mx-auto">
       <div className="flex space-x-2">
-        {currentStep > 0 && (
+        {step > 0 && (
           <Button
             variant="outline"
             onClick={handlePrevious}
@@ -60,7 +60,7 @@ export function NavigationButtons({
       </div>
 
       <div className="text-sm text-muted-foreground">
-        ステップ {currentStep + 1} / 6
+        ステップ {step + 1} / 6
       </div>
     </div>
   );

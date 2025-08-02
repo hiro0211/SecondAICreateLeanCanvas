@@ -1,104 +1,31 @@
+// src/contexts/WorkflowContext.tsx
 "use client";
 
-import React, { createContext, useContext, useReducer, ReactNode } from "react";
-import { WorkflowState, WorkflowContextType } from "@/types";
+import React, { createContext, useContext, ReactNode } from "react";
+import { GeneratorContextType } from "@/types";
+import { useGenerator as useGeneratorHook } from "@/hooks/useGenerator";
 
-const initialState: WorkflowState = {
-  currentStep: 0,
-  conversationId: "",
-  keyword: "",
-  personas: [],
-  selectedPersona: null,
-  businessIdeas: [],
-  selectedBusinessIdea: null,
-  productDetails: {
-    category: "",
-    features: "",
-    brandImage: "",
-  },
-  productNames: [],
-  selectedProductName: null,
-  leanCanvas: null,
-};
-
-type WorkflowAction =
-  | { type: "UPDATE_STATE"; payload: Partial<WorkflowState> }
-  | { type: "NEXT_STEP" }
-  | { type: "PREV_STEP" }
-  | { type: "RESET_WORKFLOW" };
-
-function workflowReducer(
-  state: WorkflowState,
-  action: WorkflowAction
-): WorkflowState {
-  switch (action.type) {
-    case "UPDATE_STATE":
-      const updatedState = { ...state, ...action.payload };
-      // conversationIdが更新された場合、ログ出力で確認
-      if (action.payload.conversationId && action.payload.conversationId !== state.conversationId) {
-        console.log('WorkflowContext: conversationId updated:', action.payload.conversationId);
-      }
-      // Ensure businessIdeas is always an array
-      if (
-        "businessIdeas" in action.payload &&
-        !Array.isArray(action.payload.businessIdeas)
-      ) {
-        updatedState.businessIdeas = [];
-      }
-      return updatedState;
-    case "NEXT_STEP":
-      return { ...state, currentStep: Math.min(state.currentStep + 1, 5) };
-    case "PREV_STEP":
-      return { ...state, currentStep: Math.max(state.currentStep - 1, 0) };
-    case "RESET_WORKFLOW":
-      return { ...initialState };
-    default:
-      return state;
-  }
-}
-
-const WorkflowContext = createContext<WorkflowContextType | undefined>(
+const GeneratorContext = createContext<GeneratorContextType | undefined>(
   undefined
 );
 
-export function WorkflowProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(workflowReducer, initialState);
-
-  const updateState = (updates: Partial<WorkflowState>) => {
-    dispatch({ type: "UPDATE_STATE", payload: updates });
-  };
-
-  const nextStep = () => {
-    dispatch({ type: "NEXT_STEP" });
-  };
-
-  const prevStep = () => {
-    dispatch({ type: "PREV_STEP" });
-  };
-
-  const resetWorkflow = () => {
-    dispatch({ type: "RESET_WORKFLOW" });
-  };
-
-  const contextValue: WorkflowContextType = {
-    state,
-    updateState,
-    nextStep,
-    prevStep,
-    resetWorkflow,
-  };
+export function GeneratorProvider({ children }: { children: ReactNode }) {
+  const generator = useGeneratorHook();
 
   return (
-    <WorkflowContext.Provider value={contextValue}>
+    <GeneratorContext.Provider value={generator}>
       {children}
-    </WorkflowContext.Provider>
+    </GeneratorContext.Provider>
   );
 }
 
 export function useWorkflow() {
-  const context = useContext(WorkflowContext);
+  const context = useContext(GeneratorContext);
   if (context === undefined) {
-    throw new Error("useWorkflow must be used within a WorkflowProvider");
+    throw new Error("useWorkflow must be used within a GeneratorProvider");
   }
   return context;
 }
+
+// Backward compatibility - alias for the new hook
+export { useWorkflow as useGenerator };

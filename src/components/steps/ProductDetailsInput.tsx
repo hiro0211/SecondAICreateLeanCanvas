@@ -1,3 +1,4 @@
+// src/components/steps/ProductDetailsInput.tsx
 'use client';
 
 import { useState } from 'react';
@@ -6,30 +7,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { useWorkflow } from '@/contexts/WorkflowContext';
-import { useDifyChat } from '@/hooks/useDifyChat';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Package } from 'lucide-react';
 
 export function ProductDetailsInput() {
-  const [category, setCategory] = useState('');
-  const [features, setFeatures] = useState('');
-  const [brandImage, setBrandImage] = useState('');
-  const { state, updateState, nextStep } = useWorkflow();
-  const { sendMessage, loading, error } = useDifyChat();
+  const { state, setProductDetails } = useWorkflow();
+  const { selectedIdea, isLoading, error } = state;
+  
+  const [details, setDetails] = useState({
+    category: '',
+    features: '',
+    brandImage: ''
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!category.trim() || !features.trim() || !brandImage.trim()) return;
-
-    const productDetails = { category, features, brandImage };
-    const message = `カテゴリー: ${category}, 特徴: ${features}, ブランドイメージ: ${brandImage}`;
+    if (!details.category.trim() || !details.features.trim() || !details.brandImage.trim()) return;
 
     try {
-      await sendMessage(message);
-      updateState({ productDetails });
-      nextStep();
+      await setProductDetails(details);
     } catch (err) {
-      console.error('Failed to send product details:', err);
+      console.error('Failed to set product details:', err);
     }
   };
 
@@ -40,61 +39,54 @@ export function ProductDetailsInput() {
       exit={{ opacity: 0, y: -20 }}
       className="max-w-4xl mx-auto"
     >
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-center mb-4">プロダクト詳細を入力してください</h2>
-        <p className="text-center text-muted-foreground">
-          選択したビジネスアイデア「{state.selectedBusinessIdea?.idea}」について、より詳細な情報を入力してください。
-        </p>
-      </div>
-
       <Card>
         <CardHeader>
-          <CardTitle>プロダクト情報</CardTitle>
+          <div className="flex items-center space-x-2">
+            <Package className="h-6 w-6" />
+            <CardTitle>プロダクト詳細の入力</CardTitle>
+          </div>
           <CardDescription>
-            プロダクトのカテゴリー、主な特徴、ブランドイメージを入力してください。
+            選択されたビジネスアイデア「{selectedIdea?.idea_text}」に基づいて、プロダクトの詳細を入力してください。
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium mb-2">
-                カテゴリー *
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="category">プロダクトカテゴリー</Label>
               <Input
                 id="category"
                 type="text"
-                placeholder="例：AI教育プラットフォーム、健康管理アプリ"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                disabled={loading}
+                placeholder="例：AI教育プラットフォーム"
+                value={details.category}
+                onChange={(e) => setDetails(prev => ({ ...prev, category: e.target.value }))}
+                disabled={isLoading}
+                required
               />
             </div>
 
-            <div>
-              <label htmlFor="features" className="block text-sm font-medium mb-2">
-                主な特徴・機能 *
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="features">主要機能・特徴</Label>
               <Textarea
                 id="features"
-                placeholder="例：個別最適化された学習プラン、リアルタイム進捗追跡、AIによる質問回答"
-                value={features}
-                onChange={(e) => setFeatures(e.target.value)}
-                disabled={loading}
+                placeholder="例：個別最適化学習、リアルタイムフィードバック、進捗追跡"
+                value={details.features}
+                onChange={(e) => setDetails(prev => ({ ...prev, features: e.target.value }))}
+                disabled={isLoading}
                 rows={4}
+                required
               />
             </div>
 
-            <div>
-              <label htmlFor="brandImage" className="block text-sm font-medium mb-2">
-                ブランドイメージ *
-              </label>
-              <Textarea
+            <div className="space-y-2">
+              <Label htmlFor="brandImage">ブランドイメージ</Label>
+              <Input
                 id="brandImage"
-                placeholder="例：革新的でアクセシブル、信頼できる教育パートナー"
-                value={brandImage}
-                onChange={(e) => setBrandImage(e.target.value)}
-                disabled={loading}
-                rows={3}
+                type="text"
+                placeholder="例：革新的、信頼性、親しみやすい"
+                value={details.brandImage}
+                onChange={(e) => setDetails(prev => ({ ...prev, brandImage: e.target.value }))}
+                disabled={isLoading}
+                required
               />
             </div>
 
@@ -102,18 +94,18 @@ export function ProductDetailsInput() {
               <div className="text-red-500 text-sm">{error}</div>
             )}
 
-            <Button 
-              type="submit" 
-              disabled={loading || !category.trim() || !features.trim() || !brandImage.trim()}
+            <Button
+              type="submit"
+              disabled={isLoading || !details.category.trim() || !details.features.trim() || !details.brandImage.trim()}
               className="w-full"
             >
-              {loading ? (
+              {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  処理中...
+                  プロダクト名を生成中...
                 </>
               ) : (
-                'プロダクト名の提案を取得'
+                'プロダクト名候補を生成'
               )}
             </Button>
           </form>

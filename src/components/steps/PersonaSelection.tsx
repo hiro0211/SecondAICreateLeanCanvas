@@ -1,67 +1,32 @@
+// src/components/steps/PersonaSelection.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWorkflow } from '@/contexts/WorkflowContext';
-import { useDifyChat } from '@/hooks/useDifyChat';
-import { parsePersonasResponse } from '@/lib/utils';
 import { Persona } from '@/types';
 import { Loader2, User } from 'lucide-react';
 
 export function PersonaSelection() {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { state, updateState, nextStep } = useWorkflow();
-  const { sendMessage, loading, error } = useDifyChat();
-
-  // 重要: useEffectを削除し、初期データロードロジックを変更
-  useEffect(() => {
-    // 既にPersonaSelectionページに来ているということは、
-    // キーワード入力で既にDifyからペルソナデータを受け取っているはず
-    
-    // もしペルソナデータがない場合のみ、前のステップに戻るか警告を表示
-    if (state.personas.length === 0) {
-      console.warn('PersonaSelection: No personas data available');
-      // 前のステップに戻るか、エラー表示
-    }
-  }, []); // 空の依存配列で一度だけ実行
+  const { state, selectPersona } = useWorkflow();
+  const { personas, isLoading, error } = state;
 
   const handlePersonaSelect = async (persona: Persona) => {
-    if (isProcessing) return; // 重複クリック防止
+    if (isLoading) return;
     
     setSelectedPersona(persona);
-    setIsProcessing(true);
     
     try {
-      console.log('Selecting persona:', persona.id);
-      console.log('Using conversation_id:', state.conversationId);
-      
-      // ペルソナ選択をDifyに送信（数字のみ）
-      const response = await sendMessage(persona.id.toString(), state.conversationId);
-      
-      console.log('Persona selection response:', response);
-      
-      // レスポンスが空でないことを確認
-      if (response && response.conversation_id) {
-        updateState({ 
-          selectedPersona: persona,
-          conversationId: response.conversation_id // conversation_idを更新
-        });
-        nextStep();
-      } else {
-        console.error('Empty response from Dify');
-        setIsProcessing(false);
-      }
+      await selectPersona(persona);
     } catch (err) {
       console.error('Failed to select persona:', err);
-      setIsProcessing(false);
     }
   };
 
   // ペルソナデータがない場合の表示
-  if (state.personas.length === 0) {
+  if (personas.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -104,7 +69,7 @@ export function PersonaSelection() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {state.personas.map((persona, index) => (
+        {personas.map((persona, index) => (
           <motion.div
             key={persona.id}
             initial={{ opacity: 0, y: 20 }}
@@ -114,7 +79,7 @@ export function PersonaSelection() {
             <Card 
               className={`cursor-pointer transition-all hover:shadow-lg ${
                 selectedPersona?.id === persona.id ? 'ring-2 ring-primary' : ''
-              } ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`}
+              } ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
               onClick={() => handlePersonaSelect(persona)}
             >
               <CardHeader>
@@ -141,7 +106,7 @@ export function PersonaSelection() {
         ))}
       </div>
 
-      {(loading || isProcessing) && (
+      {isLoading && (
         <div className="flex justify-center mt-8">
           <div className="flex items-center">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
